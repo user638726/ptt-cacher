@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <title>PTT NBA 今日與昨日文章</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f5f5f5;
+    }
+    h1 { text-align: center; }
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 16px 0 22px;
+    }
+    button {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    ul { list-style: none; padding: 0; max-width: 900px; margin: 0 auto; }
+    li {
+      background: #fff;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    a {
+      text-decoration: none;
+      color: #007bff;
+      font-weight: bold;
+    }
+    a:hover { text-decoration: underline; }
+    .meta {
+      font-size: 0.9em;
+      color: #555;
+      margin-top: 5px;
+    }
+    .hint {
+      text-align: center;
+      color: #666;
+      margin-top: 8px;
+      font-size: 0.95em;
+    }
+  </style>
+</head>
+<body>
+  <h1>PTT NBA 今日與昨日文章</h1>
+
+  <div class="actions">
+    <button id="btnLoad">重新抓取</button>
+  </div>
+
+  <div class="hint" id="status"></div>
+  <ul id="articles"></ul>
+
+  <script>
+    const container = document.getElementById("articles");
+    const statusEl = document.getElementById("status");
+    const btnLoad = document.getElementById("btnLoad");
+
+    function setStatus(text) {
+      statusEl.textContent = text || "";
+    }
+
+    function renderArticles(articles) {
+      container.innerHTML = "";
+
+      if (!Array.isArray(articles)) {
+        container.innerHTML = "<li>資料格式錯誤（不是陣列）</li>";
+        return;
+      }
+
+      if (articles.length === 0) {
+        container.innerHTML = "<li>今天與昨天沒有文章</li>";
+        return;
+      }
+
+      articles.forEach(item => {
+        const title = item?.postInfo?.title ?? "(no title)";
+        const author = item?.postInfo?.author ?? "";
+        const date = item?.postInfo?.date ?? "";
+        const link = item?.contentInfo?.link?.[0] ?? "#";
+
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <a href="${link}" target="_blank" rel="noopener noreferrer">${title}</a>
+          <div class="meta">作者: ${author} | 日期: ${date}</div>
+        `;
+        container.appendChild(li);
+      });
+    }
+
+    async function loadArticles() {
+      btnLoad.disabled = true;
+      setStatus("抓取中…（第一次跑可能比較久）");
+      container.innerHTML = "";
+
+      try {
+        const res = await fetch("/crawl");
+        const data = await res.json();
+
+        if (!res.ok) {
+          const msg = data?.error || "抓取失敗";
+          container.innerHTML = `<li>發生錯誤: ${msg}</li>`;
+          setStatus("");
+          return;
+        }
+
+        setStatus(`完成！共 ${data.length} 篇`);
+        renderArticles(data);
+      } catch (err) {
+        console.error(err);
+        container.innerHTML = "<li>載入失敗（請看 Console）</li>";
+        setStatus("");
+      } finally {
+        btnLoad.disabled = false;
+      }
+    }
+
+    btnLoad.addEventListener("click", loadArticles);
+    window.onload = loadArticles;
+  </script>
+</body>
+</html>

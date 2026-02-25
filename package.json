@@ -1,0 +1,11 @@
+{
+  "type": "module",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "cheerio": "^1.1.2",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "fs-extra": "^11.3.2",
+    "puppeteer": "^24.32.0"
+  }
+}
